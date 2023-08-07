@@ -1,6 +1,6 @@
-# Template-OG
+# HolyGrail-OG
 
-A blank plugin for TrueOG from which to base other plugins off of.
+Infinitely respawning anvils and end crystals at spawn and in duels arenas. A cup that never runs dry. Built for [TrueOG](https://true-og.net/).
 
 Gradle Version: 8.1.1
 
@@ -8,4 +8,4 @@ Java Version: 17
 
 Minecraft API: 1.18.2
 
-Template-OG is public domain software released under the terms of [The Unlicense](https://github.com/true-og/Template-OG/blob/main/LICENSE).
+HolyGrail-OG is public domain software released under the terms of [The Unlicense](https://github.com/true-og/HolyGrail-OG/blob/main/LICENSE).

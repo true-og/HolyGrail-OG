@@ -1,7 +1,8 @@
-name: Template-OG
+name: HolyGrail-OG
 author: NotAlexNoyle
-description: A blank plugin for TrueOG from which to base other plugins off of.
-website: https://github.com/true-og/Template-OG/
+description: Infinitely respawning anvils and end crystals at spawn and in duels arenas. A cup that never runs dry.
+website: https://github.com/true-og/HolyGrail-OG/
 version: 1.0
 api-version: 1.18
-main: plugin.TemplateOG
+main: plugin.HolyGrailOG
+depend: [WorldGuard]
