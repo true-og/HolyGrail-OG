@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -17,6 +19,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.inventory.ItemStack;
 
 import com.destroystokyo.paper.event.block.AnvilDamagedEvent;
 import com.destroystokyo.paper.event.block.AnvilDamagedEvent.DamageState;
@@ -29,6 +32,12 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+
 // Declare listener class.
 public class Listeners implements Listener {
 
@@ -37,45 +46,48 @@ public class Listeners implements Listener {
 	public void onAnvilBreak(AnvilDamagedEvent event) {
 
 		// If the anvil is in the spawn region, do this...
-		if(isInSpawnRegion(BukkitAdapter.adapt(event.getInventory().getLocation())) && event.isBreaking()) {
+		if(event.isBreaking() && getRegionNames(BukkitAdapter.adapt(event.getInventory().getLocation())).contains("spawn") ) {
 
 			// Spawn a particle effect to indicate the anvil restoration.
 			event.getInventory().getLocation().getWorld().spawnParticle(Particle.SPELL, event.getInventory().getLocation(), 5);
 
-			// Restore the anvil to full.
+			// Restore the anvil to unused status.
 			event.setDamageState(DamageState.FULL);
 
 		}
 
 	}
 
-	// Listen for entities being spawned.
+	// Listen for entities being damaged.
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onEntityDamage(EntityDamageEvent event) {
 
-		// If the entity that was spawned is an end crystal, and it is in the spawn region, do this...
-		if(isInSpawnRegion(BukkitAdapter.adapt(event.getEntity().getLocation())) && event.getEntityType().equals(EntityType.ENDER_CRYSTAL)) {
+		// TODO: Establish ender crystal destroy permissions such that they are only destructible in arenas.
+		// TODO: Make sure crystals only do damage to those in a duel match.
 
-			// Wait a few seconds.
-			Bukkit.getScheduler().runTaskLater(HolyGrailOG.getPlugin(), new Runnable() {
-				// Run a scheduled task.
-				@Override
-				public void run() {
+		// If the entity that was damaged is an ender crystal, do this...
+		if(event.getEntityType().equals(EntityType.ENDER_CRYSTAL)) {
 
-					// Restore the end crystal to its original location.
-					event.getEntity().getWorld().spawnEntity(event.getEntity().getLocation(), EntityType.ENDER_CRYSTAL);
+			// Get a list of regions from WorldGuard.
+			ArrayList<String> regionQuery = getRegionNames(BukkitAdapter.adapt(event.getEntity().getLocation()));
 
-				}
-				// Declare amount of ticks to wait (20L = 1 tick).
-			}, 100L);
+			// If the ender crystal that was damaged is in the spawn region, do this...
+			if(regionQuery.contains("spawn")) {
 
-		}
-		// TODO: Attempt to always cancel damage in duels arenas.
-		else {
+				// Wait 5 seconds, so that it doesn't appear that the crystal didn't get destroyed.
+				Bukkit.getScheduler().runTaskLater(HolyGrailOG.getPlugin(), new Runnable() {
+					// Run a scheduled task.
+					@Override
+					public void run() {
 
-			if(event.getEntity().getType().equals(EntityType.ENDER_CRYSTAL)){
+						// TODO: Delete all crystals at the entity location to make room for the new one.
 
-				event.setCancelled(false);
+						// Restore the ender crystal to its original location.
+						event.getEntity().getWorld().spawnEntity(event.getEntity().getLocation(), EntityType.ENDER_CRYSTAL);
+
+					}
+					// Declare amount of ticks to wait (20L = 1 tick).
+				}, 100L);
 
 			}
 
@@ -83,23 +95,43 @@ public class Listeners implements Listener {
 
 	}
 
-	// TODO: Complete the mechanism for staff to intentionally delete crystals.
+	// Listen for entities exploding.
+	/*@EventHandler(priority = EventPriority.HIGHEST)
+	public void onEntityExplosion(EntityExplodeEvent event) {
+
+		// Stop explosion from being cancelled in arenas.
+		if(doAnyRegionNamesContain("arena", event.getEntity())) {
+
+			event.setCancelled(false);
+
+		}
+
+	}*/
+
 	// Listen for a player interacting with a block or entity.
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onEntityInteract(PlayerInteractEntityEvent event) {
 
-		// Get the nature of the interaction and store it.
+		// Get the nature of the interaction.
 		Entity entityClicked = event.getRightClicked();
 
-		// If the player right clicked on the block or entity, do this...
+		// If the player right clicked on an ender crystal, do this...
 		if(entityClicked.getType().equals(EntityType.ENDER_CRYSTAL)) {
 
-			// Get the player who interacted and store them.
+			// Get the player who performed the interaction.
 			Player player = event.getPlayer();
 
-			// TODO: Remove dev logger.
-			HolyGrailOG.getPlugin();
-			HolyGrailOG.getPlugin().getLogger().info("Player " + player.getName() + " right clicked an ender crystal.");
+			// Get the item in the player's main hand.
+			ItemStack itemInHand = player.getInventory().getItemInMainHand();
+
+			// If the player is holding an ender crystal in their hand, and they have permission, send them an ender crystal deletion confirmation prompt.
+			if(itemInHand.getType().equals(Material.END_CRYSTAL) && player.hasPermission("holygrail.deletecrystals")) {
+
+				// TODO: Delete all crystals at the entity location according to player command.
+
+				sendClickableMessage(player, entityClicked.getLocation().getX(), entityClicked.getLocation().getY(), entityClicked.getLocation().getBlockZ());
+
+			}
 
 		}
 
@@ -109,19 +141,50 @@ public class Listeners implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onEntitySpawn(EntitySpawnEvent event) {
 
-		// If the entity that was spawned is an end crystal, and it is in the spawn region, do this...
-		if(isInSpawnRegion(BukkitAdapter.adapt(event.getLocation())) && event.getEntityType().equals(EntityType.ENDER_CRYSTAL)) {
+		// If the entity that was spawned is an ender crystal, and it is in the spawn region, do this...
+		if(event.getEntityType().equals(EntityType.ENDER_CRYSTAL) && getRegionNames(BukkitAdapter.adapt(event.getLocation())).contains("spawn")) {
 
-			// If an end crystal already exists at the location, do this...
-			if(crystalsReasonablyNearby(event.getEntity()).contains("ender_crystal")) {
+			// Make a list of to hold the nearby entities sized of the maximum reasonable amount of nearby entities.
+			List<Entity> entityList = new ArrayList<Entity>(3457);
+
+			// Make a list of to hold the nearby entity names sized of the maximum reasonable amount of nearby entities.
+			ArrayList<String> entityTitles = new ArrayList<String>(3457);
+
+			// Iterate over the nearby entities with a pre-set maximum.
+			for(int i = 0; i < entityList.size(); i++) {
+
+				// Attempt to run error-throwing code.
+				try {
+
+					// Get a list of nearby entities.
+					entityList.add(event.getEntity().getNearbyEntities(2, 2, 2).get(i));
+
+					// Get a list of nearby entities' titles.
+					entityTitles.add(event.getEntity().getNearbyEntities(2, 2, 2).get(i).getType().toString().toLowerCase());
+
+				}
+				// If the amount of entities is less than 3457, this error will be thrown.
+				catch(IndexOutOfBoundsException error) {
+
+					// Stop the loop if maximum entity count was reached. The last value of i will be used as the list size.
+					break;
+
+				}
+
+			}
+
+			// If an ender crystal already exists at the location, do this...
+			if(entityTitles.contains("ender_crystal")) {
 
 				// Don't spawn in another crystal since there is one already.
+				// TODO: Fix me.
 				event.setCancelled(true);
 
 			}
 			else {
 
-				// Spawn particles to indicate the end crystal being restored.
+				// Spawn particles to indicate the ender crystal being restored.
+				// TODO: Particles to indicate that that crystal is soon to be restored.
 				event.getEntity().getWorld().spawnParticle(Particle.SPELL, event.getEntity().getLocation(), 6);
 
 			}
@@ -130,68 +193,64 @@ public class Listeners implements Listener {
 
 	}
 
-	// TODO: Move crystal finding logic here so its re-usable.
-	private ArrayList<String> crystalsReasonablyNearby(Entity eventEntity) {
+	// Declare a function for searching for specific sequences of characters in region names.
+	private boolean doAnyRegionNamesContain(CharSequence lookup, Entity entity) {
 
-		// Make a list of to hold the nearby entities sized of the maximum reasonable amount of nearby entities.
-		List<Entity> entityList = new ArrayList<Entity>(3457);
-		
-		// Make a list of to hold the nearby entity names sized of the maximum reasonable amount of nearby entities.
-		ArrayList<String> entityConverter = new ArrayList<String>(3457);
+		// Get a list of regions from WorldGuard.
+		ArrayList<String> regionQuery = getRegionNames(BukkitAdapter.adapt(entity.getLocation()));
 
-		// Iterate over the nearby entities with a pre-set maximum.
-		for(int i = 0; i < entityList.size(); i++) {
+		boolean queryFound = false;
 
-			// Attempt to run error-throwing code.
-			try {
+		for(int i = 0; i < regionQuery.size(); i++) {
 
-				// Get a list of nearby crystal entities.
-				entityList.add(eventEntity.getNearbyEntities(2, 2, 2).get(i));
-				entityConverter.add(eventEntity.getNearbyEntities(2, 2, 2).get(i).getType().toString().toLowerCase());
+			if(regionQuery.get(i).contains(lookup)) {
 
-			}
-			// If the amount of entities is less than 3457, this error will be thrown.
-			catch(IndexOutOfBoundsException error) {
-
-				// Stop the loop if maximum entity count was reached. The last value of i will be used as the list size.
-				break;
+				queryFound = true;
 
 			}
 
 		}
 
-		// Return the completed entity list.
-		return entityConverter;
+		return queryFound;
 
 	}
 
-	// Declare a function for checking whether a location is in spawn.
-	private boolean isInSpawnRegion(Location worldGuardBlockLocation) {
+	// Declare a function for checking whether a location is in a region.
+	private ArrayList<String> getRegionNames(Location worldGuardBlockLocation) {
 
-		// Get the list of regions at the location using the WorldGuard API.
+		// Query the list of regions at the location using the WorldGuard API.
 		WorldGuard.getInstance();
 		RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
 		RegionQuery query = container.createQuery();
 		ApplicableRegionSet set = query.getApplicableRegions(worldGuardBlockLocation);
 		List<ProtectedRegion> region = Lists.newArrayList(set);
-
-		// Keeps track of whether spawn is found during the loop on any iteration.
-		boolean isInSpawn = false;
-		// Iterate through all of the location's WorldGuard regions.
+		ArrayList<String> regionNames = new ArrayList<String>(region.size());
+		regionNames.add("none");
 		for(int i = 0; i < region.size(); i++) {
 
-			// If the region matches "spawn", do this...
-			if(region.get(i).getId().equals("spawn")) {
-
-				// Pass affirmative result.
-				isInSpawn = true;
-
-			}
+			regionNames.add(i, region.get(i).getId());
 
 		}
 
-		// Return outcome.
-		return isInSpawn;
+		// Return a list of all applicable regions.
+		return regionNames;
+
+	}
+
+	// Turns chat text into a command button.
+	public static void sendClickableMessage(Player player, double x, double y, double z) {
+
+		// Declare a TextComponent with contents.
+		TextComponent clickableText = Component.text("[Click Here]");
+
+		// Style the clickable text.
+		clickableText.color(NamedTextColor.AQUA).decoration(TextDecoration.BOLD, TextDecoration.State.TRUE);
+
+		// Create a click event on the chat text.
+		clickableText = clickableText.clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "tps"));
+
+		// Send the clickable text to the player.
+		player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6Are you sure you want to &cdelete &6the ender crystal at X = &e" + x + "&6, Y = &e" + y + "&6, Z = &e" + z + "&6? To confirm: &B") + clickableText.content());
 
 	}
 

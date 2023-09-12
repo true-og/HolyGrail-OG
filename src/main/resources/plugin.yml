@@ -2,7 +2,11 @@ name: HolyGrail-OG
 author: NotAlexNoyle
 description: Infinitely respawning anvils and end crystals at spawn and in duels arenas. A cup that never runs dry.
 website: https://github.com/true-og/HolyGrail-OG/
-version: 1.0
+version: 1.1
 api-version: 1.18
 main: plugin.HolyGrailOG
 depend: [WorldGuard]
+permissions:
+  holygrail.deletecrystals:
+    description: Permission to delete ender crystals at spawn.
+    default: op
