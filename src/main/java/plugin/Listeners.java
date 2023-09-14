@@ -20,6 +20,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitTask;
 
 import com.destroystokyo.paper.event.block.AnvilDamagedEvent;
 import com.destroystokyo.paper.event.block.AnvilDamagedEvent.DamageState;
@@ -40,6 +41,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 
 // Declare listener class.
 public class Listeners implements Listener {
+
+	private BukkitTask task = null;
 
 	// Listen for an anvil being damaged.
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -62,8 +65,8 @@ public class Listeners implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onEntityDamage(EntityDamageEvent event) {
 
-		// TODO: Establish ender crystal destroy permissions such that they are only destructible in arenas.
-		// TODO: Make sure crystals only do damage to those in a duel match.
+		// TODO: Test destroying crystals in vs outside of duels.
+		// TODO: Test to make sure crystals only do damage to those in a duel match.
 
 		// If the entity that was damaged is an ender crystal, do this...
 		if(event.getEntityType().equals(EntityType.ENDER_CRYSTAL)) {
@@ -74,20 +77,54 @@ public class Listeners implements Listener {
 			// If the ender crystal that was damaged is in the spawn region, do this...
 			if(regionQuery.contains("spawn")) {
 
-				// Wait 5 seconds, so that it doesn't appear that the crystal didn't get destroyed.
-				Bukkit.getScheduler().runTaskLater(HolyGrailOG.getPlugin(), new Runnable() {
-					// Run a scheduled task.
-					@Override
-					public void run() {
+				CharSequence arenaQuery = "arena";
+				if(! doAnyRegionNamesContain(arenaQuery, event.getEntity())) {
 
-						// TODO: Delete all crystals at the entity location to make room for the new one.
+					event.setCancelled(true);
 
-						// Restore the ender crystal to its original location.
-						event.getEntity().getWorld().spawnEntity(event.getEntity().getLocation(), EntityType.ENDER_CRYSTAL);
+				}
+				else {
 
-					}
-					// Declare amount of ticks to wait (20L = 1 tick).
-				}, 100L);
+					// TODO: Test the pending restore particles.
+					// Create a final array to capture the value of the remaining seconds (similar to a loop).
+					final int[] secondsRemaining = { 5 };
+
+					// Schedule a repeating task to show pending end crystal restore particles.
+					task = Bukkit.getScheduler().runTaskTimer(HolyGrailOG.getPlugin(), new Runnable() {
+
+						@Override
+						public void run() {
+
+							event.getEntity().getWorld().spawnParticle(Particle.FIREWORKS_SPARK, event.getEntity().getLocation(), 3);
+
+							// Decrease the remaining time
+							secondsRemaining[0] = secondsRemaining[0] - 1;
+
+							// Check if we should stop the task
+							if (secondsRemaining[0] <= 0) {
+
+								Bukkit.getScheduler().cancelTask(task.getTaskId()); // Cancel the task
+
+							}
+
+						}
+					}, 0L, 20L); // The '0L' means start immediately, and '20L' means run every 20 ticks (1 second).
+
+					// Wait 5 seconds, so that it doesn't appear that the crystal didn't get destroyed.
+					Bukkit.getScheduler().runTaskLater(HolyGrailOG.getPlugin(), new Runnable() {
+						// Run a scheduled task.
+						@Override
+						public void run() {
+
+							// TODO: Delete all crystals at the entity location to make room for the new one.
+
+							// Restore the ender crystal to its original location.
+							event.getEntity().getWorld().spawnEntity(event.getEntity().getLocation(), EntityType.ENDER_CRYSTAL);
+
+						}
+					}, 20L); // '20L' means run every 20 ticks (1 second).
+
+				}
 
 			}
 
@@ -177,14 +214,12 @@ public class Listeners implements Listener {
 			if(entityTitles.contains("ender_crystal")) {
 
 				// Don't spawn in another crystal since there is one already.
-				// TODO: Fix me.
 				event.setCancelled(true);
 
 			}
 			else {
 
 				// Spawn particles to indicate the ender crystal being restored.
-				// TODO: Particles to indicate that that crystal is soon to be restored.
 				event.getEntity().getWorld().spawnParticle(Particle.SPELL, event.getEntity().getLocation(), 6);
 
 			}
