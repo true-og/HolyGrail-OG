@@ -2,8 +2,8 @@ name: HolyGrail-OG
 author: NotAlexNoyle
 description: Infinitely respawning anvils and end crystals at spawn and in duels arenas. A cup that never runs dry.
 website: https://github.com/true-og/HolyGrail-OG/
-version: 1.1
-api-version: 1.18
+version: '${version}'
+api-version: 1.19
 main: plugin.HolyGrailOG
 depend: [WorldGuard]
 permissions:

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
@@ -21,6 +20,7 @@ import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.NotNull;
 
 import com.destroystokyo.paper.event.block.AnvilDamagedEvent;
 import com.destroystokyo.paper.event.block.AnvilDamagedEvent.DamageState;
@@ -112,17 +112,25 @@ public class Listeners implements Listener {
 
 					// Wait 5 seconds, so that it doesn't appear that the crystal didn't get destroyed.
 					Bukkit.getScheduler().runTaskLater(HolyGrailOG.getPlugin(), new Runnable() {
-						// Run a scheduled task.
-						@Override
-						public void run() {
+					    // Run a scheduled task.
+					    @Override
+					    public void run() {
 
-							// TODO: Delete all crystals at the entity location to make room for the new one.
+					        // Delete existing crystals at the location.
+					        // TODO: Test this code...
+					        org.bukkit.@NotNull Location crystalLocation = event.getEntity().getLocation();
+					        for (Entity nearbyEntity : crystalLocation.getWorld().getNearbyEntities(crystalLocation, 2, 2, 2)) { 
+					            if (nearbyEntity.getType() == EntityType.ENDER_CRYSTAL) {
+					                nearbyEntity.remove();
+					            }
+					        }
 
-							// Restore the ender crystal to its original location.
-							event.getEntity().getWorld().spawnEntity(event.getEntity().getLocation(), EntityType.ENDER_CRYSTAL);
+					        // Restore the ender crystal to its original location.
+					        event.getEntity().getWorld().spawnEntity(crystalLocation, EntityType.ENDER_CRYSTAL);
 
-						}
-					}, 20L); // '20L' means run every 20 ticks (1 second).
+					    }
+					}, 100L); // 100L = 5 seconds delay 
+
 
 				}
 
@@ -165,6 +173,13 @@ public class Listeners implements Listener {
 			if(itemInHand.getType().equals(Material.END_CRYSTAL) && player.hasPermission("holygrail.deletecrystals")) {
 
 				// TODO: Delete all crystals at the entity location according to player command.
+		        // TODO: Test this code...
+		        org.bukkit.@NotNull Location crystalLocation = entityClicked.getLocation();
+		        for (Entity nearbyEntity : crystalLocation.getWorld().getNearbyEntities(crystalLocation, 2, 2, 2)) { 
+		            if (nearbyEntity.getType() == EntityType.ENDER_CRYSTAL) {
+		                nearbyEntity.remove();
+		            }
+		        }
 
 				sendClickableMessage(player, entityClicked.getLocation().getX(), entityClicked.getLocation().getY(), entityClicked.getLocation().getBlockZ());
 
@@ -285,7 +300,7 @@ public class Listeners implements Listener {
 		clickableText = clickableText.clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "tps"));
 
 		// Send the clickable text to the player.
-		player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6Are you sure you want to &cdelete &6the ender crystal at X = &e" + x + "&6, Y = &e" + y + "&6, Z = &e" + z + "&6? To confirm: &B") + clickableText.content());
+		player.sendMessage(Utils.legacySerializerAnyCase("&6Are you sure you want to &cdelete &6the ender crystal at X = &e\" + x + \"&6, Y = &e\" + y + \"&6, Z = &e\" + z + \"&6? To confirm: &B\"") + clickableText.content());
 
 	}
 
