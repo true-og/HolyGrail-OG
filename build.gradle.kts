@@ -43,7 +43,7 @@ repositories {
 dependencies {
     compileOnly("org.purpurmc.purpur:purpur-api:1.19.4-R0.1-SNAPSHOT") // Declare purpur API version to be packaged.
     compileOnly("io.github.miniplaceholders:miniplaceholders-api:2.2.3") // Import MiniPlaceholders API.
-    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.1.0-SNAPSHOT") // Import MiniPlaceholders API.
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.9") // Import MiniPlaceholders API.
 }
 
 tasks.withType<AbstractArchiveTask>().configureEach {
