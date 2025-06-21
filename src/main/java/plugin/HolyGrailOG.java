@@ -5,29 +5,27 @@ package plugin;
 // Import required libraries.
 import org.bukkit.plugin.java.JavaPlugin;
 
-// Extending this class is standard bukkit boilerplate for any plugin, or else the server software won't load the classes.
+// Extending this class is standard bukkit boilerplate for any plugin, or else the server software won't load the
+// classes.
 public class HolyGrailOG extends JavaPlugin {
-	
-	// Declare variable to hold class for passing.
-	private static HolyGrailOG plugin;
 
-	// What to do when the plugin is run by the server.
-	public void onEnable() {
-		
-		// Assign the plugin variable to the main class instance.
-		plugin = this;
+    // Declare variable to hold class for passing.
+    private static HolyGrailOG plugin;
 
-		// Register the event.
-		getServer().getPluginManager().registerEvents(new Listeners(), this);
+    // What to do when the plugin is run by the server.
+    public void onEnable() {
 
-	}
+        // Assign the plugin variable to the main class instance.
+        plugin = this;
 
-	// Class constructor.
-	public static HolyGrailOG getPlugin() {
+        // Register the event.
+        getServer().getPluginManager().registerEvents(new Listeners(), this);
+    }
 
-		// Pass instance of main to other classes.
-		return plugin;
+    // Class constructor.
+    public static HolyGrailOG getPlugin() {
 
-	}
-
+        // Pass instance of main to other classes.
+        return plugin;
+    }
 }
