@@ -20,6 +20,7 @@ public class HolyGrailOG extends JavaPlugin {
 
         // Register the event.
         getServer().getPluginManager().registerEvents(new Listeners(), this);
+
     }
 
     // Class constructor.
@@ -27,5 +28,7 @@ public class HolyGrailOG extends JavaPlugin {
 
         // Pass instance of main to other classes.
         return plugin;
+
     }
+
 }
