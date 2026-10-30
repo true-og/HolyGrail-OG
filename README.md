@@ -8,4 +8,4 @@ Java Version: 17
 
 Minecraft API: 1.18.2
 
-HolyGrail-OG is public domain software released under the terms of [The Unlicense](https://github.com/true-og/HolyGrail-OG/blob/main/LICENSE).
+HolyGrail-OG is public domain software released under the terms of [The Unlicense](https://git.trueog.net/trueog/HolyGrail-OG/src/branch/main/LICENSE).
